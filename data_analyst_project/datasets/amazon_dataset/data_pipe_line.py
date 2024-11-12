@@ -1,5 +1,7 @@
 import pandas as pd
 import re
+from pathlib import Path
+import json
 
 
 file = 'amazon.xlsx'
@@ -11,7 +13,8 @@ def filter_num(num):
         r'[^\d.]', '', 
         str(num)
     )
-    return float(filtered_num) if filtered_num else None
+    return float(filtered_num) if filtered_num else 0
+
 
 def filter_text(text):
     remove_strange_characters_from_text = re.sub(
@@ -28,50 +31,60 @@ def filter_text(text):
     ).strip()
     return text_with_normalized_spaces if text_with_normalized_spaces else None
 
-def convert_to_sales_metric(value): #revenue #capital
-    multiplier = len(data.get('user_id', 0))
+
+def convert_to_sales_metric(value, index): #revenue #capital
+    multiplier = len(data['user_id'][index].split(','))
     new_value = (value * multiplier)
-    return new_value
-    
+    return new_value if new_value else 0
+
+
 try:
-    data['discount_percentage'] = pd.to_numeric(data['discount_percentage'], errors = 'coerce')
-    value_ = data['discount_percentage'][0]
-    result = value_ * 3
-    print(value_, result)
-    for field in ['discounted_price', 'actual_price', 'rating', 'rating_count']:
+    data.rename(columns={
+        'discounted_price': 'capital',
+        'actual_price': 'revenue',
+        'discount_percentage': 'profit_margin',
+        'rating': 'product_rating'
+        },
+        inplace=True
+    )
+    for field in ['capital', 'revenue', 'profit_margin', 'product_rating']:
         data[field] = data[field].apply(filter_num)
+        data[field] = pd.to_numeric(data[field], errors = 'coerce')
+        if field in {'capital', 'revenue', 'product_rating'}:
+            count = len(data[field])
+            index = range(0, count)
+            data[field] = list(map(
+                convert_to_sales_metric, data[field], index
+                )
+            )
+        if field == 'product_rating':
+            max_possible_rating = list(map(
+                lambda value: convert_to_sales_metric(5, value), index
+                )
+            )
+            data['max_possible_rating'] = max_possible_rating
     for field in ['product_name', 'user_id']:
         data[field] = data[field].apply(filter_text)
     data['category'] = data['category'].apply(
         lambda text: text.strip().split('|')[0]
     )
-    for field in ['discounted_price', 'actual_price']:
-        data[field] = data[field].apply(convert_to_sales_metric)
-    data = data.drop(
-        columns=[
-            'user_id',
-            'img_link', 
-            'review_title', 
-            'review_id',
-            'product_link',
-            'about_product',
-            'review_content',
-            'product_id',
-            'Unnamed: 3',
-            'user_name'
+    data = data.drop(columns=[
+        'img_link', 
+        'review_title', 
+        'review_id',
+        'product_link',
+        'about_product',
+        'review_content',
+        'product_id',
+        'Unnamed: 3',
+        'user_name',
+        'rating_count'
         ]
     )
-    data.rename(
-        columns={
-            'discounted_price': 'capital',
-            'actual_price': 'revenue'
-        },
-        inplace=True
-    )
+    print(data.keys())
 except:
     import sys
-    import traceback
-        
+    import traceback        
     error_type, error_message, error_traceback = sys.exc_info()
     error_name = error_type.__name__
     frames = traceback.extract_tb(error_traceback)
