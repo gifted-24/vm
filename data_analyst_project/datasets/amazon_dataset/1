@@ -34,10 +34,6 @@ def convert_to_sales_metric(value): #revenue #capital
     return new_value
     
 try:
-    data['discount_percentage'] = pd.to_numeric(data['discount_percentage'], errors = 'coerce')
-    value_ = data['discount_percentage'][0]
-    result = value_ * 3
-    print(value_, result)
     for field in ['discounted_price', 'actual_price', 'rating', 'rating_count']:
         data[field] = data[field].apply(filter_num)
     for field in ['product_name', 'user_id']:
@@ -45,8 +41,10 @@ try:
     data['category'] = data['category'].apply(
         lambda text: text.strip().split('|')[0]
     )
-    for field in ['discounted_price', 'actual_price']:
-        data[field] = data[field].apply(convert_to_sales_metric)
+    for (old_name, new_name) in (
+        ['discounted_price', 'capital'], ['actual_price', 'revenue']
+    ):
+        data[new_name] = data[old_name].apply(convert_to_sales_metric)
     data = data.drop(
         columns=[
             'user_id',
@@ -61,13 +59,14 @@ try:
             'user_name'
         ]
     )
-    data.rename(
-        columns={
-            'discounted_price': 'capital',
-            'actual_price': 'revenue'
-        },
-        inplace=True
-    )
+    #data.rename(
+     #   columns={
+      #      'discounted_price': 'capital',
+       #     'actual_price': 'revenue'
+        #},
+        #inplace=True
+#    )
+    print(data.keys())
 except:
     import sys
     import traceback

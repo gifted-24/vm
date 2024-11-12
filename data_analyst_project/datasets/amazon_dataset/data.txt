@@ -1,0 +1,3 @@
+Index(['product_name', 'category', 'capital', 'revenue', 'discount_percentage',
+       'rating', 'rating_count', 'user_name'],
+      dtype='object')
