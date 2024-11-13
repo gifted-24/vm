@@ -77,6 +77,9 @@ try:
         lambda amount: convert_to_sales_metric(1, amount), index
         )
     )
+    data['user_id'] = data['user_id'].apply(
+        lambda _id: _id.split(',')[0]
+    )
     data = data.drop(columns=[
         'img_link', 
         'review_title', 
