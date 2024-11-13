@@ -86,6 +86,10 @@ try:
         'rating_count'
         ]
     )
+    columns = ['user_id', 'product_name', 'category', 'capital', 'revenue',
+    'profit_margin', 'product_rating', 'max_possible_rating']
+    data = data[columns]
+    data.to_excel('n_amazon.xlsx', index=False)
 except:
     import sys
     import traceback        
