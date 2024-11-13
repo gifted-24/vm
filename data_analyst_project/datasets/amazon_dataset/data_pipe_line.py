@@ -13,7 +13,7 @@ def filter_num(num):
         r'[^\d.]', '', 
         str(num)
     )
-    return float(filtered_num) if filtered_num else 0
+    return float(filtered_num) if filtered_num else None
 
 
 def filter_text(text):
@@ -35,7 +35,7 @@ def filter_text(text):
 def convert_to_sales_metric(value, index): #revenue #capital
     multiplier = len(data['user_id'][index].split(','))
     new_value = (value * multiplier)
-    return new_value if new_value else 0
+    return new_value if new_value else None
 
 
 try:
@@ -51,6 +51,7 @@ try:
         data[field] = data[field].apply(filter_num)
         data[field] = pd.to_numeric(data[field], errors = 'coerce')
         if field in {'capital', 'revenue', 'product_rating'}:
+            data[field] = data[field].fillna(0)
             count = len(data[field])
             index = range(0, count)
             data[field] = list(map(
@@ -63,10 +64,14 @@ try:
                 )
             )
             data['max_possible_rating'] = max_possible_rating
+            data['product_rating'] = data['product_rating'].fillna(
+                data['product_rating'].mean()
+            )
     for field in ['product_name', 'user_id']:
         data[field] = data[field].apply(filter_text)
     data['category'] = data['category'].apply(
-        lambda text: text.strip().split('|')[0]
+        lambda text: text.strip().split('|')[0] if isinstance(text, str) else
+        text.strip().split('|')[1]
     )
     data = data.drop(columns=[
         'img_link', 
@@ -81,7 +86,6 @@ try:
         'rating_count'
         ]
     )
-    print(data.keys())
 except:
     import sys
     import traceback        
