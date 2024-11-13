@@ -39,6 +39,8 @@ def convert_to_sales_metric(value, index): #revenue #capital
 
 
 try:
+    count = len(data['user_id'])
+    index = range(0, count)
     data.rename(columns={
         'discounted_price': 'capital',
         'actual_price': 'revenue',
@@ -52,26 +54,28 @@ try:
         data[field] = pd.to_numeric(data[field], errors = 'coerce')
         if field in {'capital', 'revenue', 'product_rating'}:
             data[field] = data[field].fillna(0)
-            count = len(data[field])
-            index = range(0, count)
             data[field] = list(map(
                 convert_to_sales_metric, data[field], index
                 )
             )
         if field == 'product_rating':
-            max_possible_rating = list(map(
-                lambda value: convert_to_sales_metric(5, value), index
-                )
-            )
-            data['max_possible_rating'] = max_possible_rating
-            data['product_rating'] = data['product_rating'].fillna(
-                data['product_rating'].mean()
+            data[field] = data[field].fillna(
+                data[field].mean()
             )
     for field in ['product_name', 'user_id']:
         data[field] = data[field].apply(filter_text)
     data['category'] = data['category'].apply(
         lambda text: text.strip().split('|')[0] if isinstance(text, str) else
         text.strip().split('|')[1]
+    )
+    max_possible_rating = list(map(
+        lambda value: convert_to_sales_metric(5, value), index
+        )
+    )
+    data['max_possible_rating'] = max_possible_rating
+    data['quantity'] = list(map(
+        lambda amount: convert_to_sales_metric(1, amount), index
+        )
     )
     data = data.drop(columns=[
         'img_link', 
@@ -86,7 +90,7 @@ try:
         'rating_count'
         ]
     )
-    columns = ['user_id', 'product_name', 'category', 'capital', 'revenue',
+    columns = ['user_id', 'product_name', 'category', 'quantity', 'capital', 'revenue',
     'profit_margin', 'product_rating', 'max_possible_rating']
     data = data[columns]
     data.to_excel('n_amazon.xlsx', index=False)
